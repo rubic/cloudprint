@@ -25,14 +25,15 @@ PRINT_CLOUD_URL = '/cloudprint/'
 LOGGER = logging.getLogger('cloudprint')
 LOGGER.setLevel(logging.INFO)
 
+
 class CloudPrintProxy(object):
 
     def __init__(self, verbose=True):
         self.verbose = verbose
         self.auth = None
         self.printer_id = None
-        self.cups= cups.Connection()
-        self.proxy =  platform.node() + '-Armooo-PrintProxy'
+        self.cups = cups.Connection()
+        self.proxy = platform.node() + '-Armooo-PrintProxy'
         self.auth_path = os.path.expanduser('~/.cloudprintauth')
         self.xmpp_auth_path = os.path.expanduser('~/.cloudprintauth.sasl')
         self.username = None
@@ -56,17 +57,19 @@ class CloudPrintProxy(object):
                         'Passwd': self.password,
                         'service': PRINT_CLOUD_SERVICE_ID,
                         'source': SOURCE,
-                    },
+                   },
                     'application/x-www-form-urlencoded')
-                xmpp_response = r.post(CLIENT_LOGIN_URL,
+                xmpp_response = r.post(
+                    CLIENT_LOGIN_URL,
                     {
                         'accountType': 'GOOGLE',
                         'Email': self.username,
                         'Passwd': self.password,
                         'service': 'mail',
                         'source': SOURCE,
-                    },
-                    'application/x-www-form-urlencoded')
+                   },
+                    'application/x-www-form-urlencoded'
+                )
                 jid = self.username if '@' in self.username else self.username + '@gmail.com'
                 sasl_token = ('\0%s\0%s' % (jid, xmpp_response['Auth'])).encode('base64')
                 file(self.xmpp_auth_path, 'w').write(sasl_token)
@@ -136,42 +139,42 @@ class CloudPrintProxy(object):
             {
                 'output': 'json',
                 'proxy': self.proxy,
-            },
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
-        return [ PrinterProxy(self, p['id'], p['name']) for p in printers['printers'] ]
+        return [PrinterProxy(self, p['id'], p['name']) for p in printers['printers']]
 
     def delete_printer(self, printer_id):
         r = self.get_rest()
-        docs = r.post(
+        r.post(
             PRINT_CLOUD_URL + 'delete',
             {
-                'output' : 'json',
+                'output': 'json',
                 'printerid': printer_id,
-            },
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
         if self.verbose:
-            LOGGER.info('Deleted printer '+ printer_id)
+            LOGGER.info('Deleted printer ' + printer_id)
 
     def add_printer(self, name, description, ppd):
         r = self.get_rest()
         r.post(
             PRINT_CLOUD_URL + 'register',
             {
-                'output' : 'json',
-                'printer' : name,
-                'proxy' :  self.proxy,
-                'capabilities' : ppd.encode('utf-8'),
-                'defaults' : ppd.encode('utf-8'),
-                'status' : 'OK',
-                'description' : description,
-                'capsHash' : hashlib.sha1(ppd.encode('utf-8')).hexdigest(),
-            },
+                'output': 'json',
+                'printer': name,
+                'proxy':  self.proxy,
+                'capabilities': ppd.encode('utf-8'),
+                'defaults': ppd.encode('utf-8'),
+                'status': 'OK',
+                'description': description,
+                'capsHash': hashlib.sha1(ppd.encode('utf-8')).hexdigest(),
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
         if self.verbose:
             LOGGER.info('Added Printer ' + name)
@@ -181,18 +184,18 @@ class CloudPrintProxy(object):
         r.post(
             PRINT_CLOUD_URL + 'update',
             {
-                'output' : 'json',
-                'printerid' : printer_id,
-                'printer' : name,
-                'proxy' : self.proxy,
-                'capabilities' : ppd.encode('utf-8'),
-                'defaults' : ppd.encode('utf-8'),
-                'status' : 'OK',
-                'description' : description,
-                'capsHash' : hashlib.sha1(ppd.encode('utf-8')).hexdigest(),
-            },
+                'output': 'json',
+                'printerid': printer_id,
+                'printer': name,
+                'proxy': self.proxy,
+                'capabilities': ppd.encode('utf-8'),
+                'defaults': ppd.encode('utf-8'),
+                'status': 'OK',
+                'description': description,
+                'capsHash': hashlib.sha1(ppd.encode('utf-8')).hexdigest(),
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
         if self.verbose:
             LOGGER.info('Updated Printer ' + name)
@@ -202,11 +205,11 @@ class CloudPrintProxy(object):
         docs = r.post(
             PRINT_CLOUD_URL + 'fetch',
             {
-                'output' : 'json',
+                'output': 'json',
                 'printerid': printer_id,
-            },
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
 
         if not 'jobs' in docs:
@@ -219,12 +222,12 @@ class CloudPrintProxy(object):
         r.post(
             PRINT_CLOUD_URL + 'control',
             {
-                'output' : 'json',
+                'output': 'json',
                 'jobid': job_id,
                 'status': 'DONE',
-            },
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM' },
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
 
     def fail_job(self, job_id):
@@ -232,13 +235,14 @@ class CloudPrintProxy(object):
         r.post(
             PRINT_CLOUD_URL + 'control',
             {
-                'output' : 'json',
+                'output': 'json',
                 'jobid': job_id,
                 'status': 'ERROR',
-            },
+           },
             'application/x-www-form-urlencoded',
-            { 'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM' },
+            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
         )
+
 
 class PrinterProxy(object):
     def __init__(self, cpp, printer_id, name):
@@ -254,6 +258,7 @@ class PrinterProxy(object):
 
     def delete(self):
         return self.cpp.delete_printer(self.id)
+
 
 class App(object):
     def __init__(self, cups_connection=None, cpp=None, printers=None, pidfile_path=None):
@@ -307,11 +312,12 @@ def sync_printers(cups_connection, cpp):
     for printer_name in remote_printer_names - local_printer_names:
         remote_printers[printer_name].delete()
 
+
 def process_job(cups_connection, cpp, printer, job):
     request = urllib2.Request(job['fileUrl'], headers={
-        'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM',
-        'Authorization' : 'GoogleLogin auth=%s' % cpp.get_auth()
-    })
+        'X-CloudPrint-Proxy': 'ArmoooIsAnOEM',
+        'Authorization': 'GoogleLogin auth=%s' % cpp.get_auth()
+   })
 
     try:
         pdf = urllib2.urlopen(request)
@@ -320,12 +326,14 @@ def process_job(cups_connection, cpp, printer, job):
         tmp.flush()
 
         request = urllib2.Request(job['ticketUrl'], headers={
-            'X-CloudPrint-Proxy' : 'ArmoooIsAnOEM',
-            'Authorization' : 'GoogleLogin auth=%s' % cpp.get_auth()
-        })
+            'X-CloudPrint-Proxy': 'ArmoooIsAnOEM',
+            'Authorization': 'GoogleLogin auth=%s' % cpp.get_auth()
+       })
         options = json.loads(urllib2.urlopen(request).read())
-        if 'request' in options: del options['request']
-        options = dict( (str(k), str(v)) for k, v in options.items() )
+        if 'request' in options:
+            del options['request']
+
+        options = dict((str(k), str(v)) for k, v in options.items())
 
         cpp.finish_job(job['id'])
 
@@ -337,6 +345,7 @@ def process_job(cups_connection, cpp, printer, job):
         cpp.fail_job(job['id'])
         LOGGER.error('ERROR ' + job['title'].encode('unicode-escape'))
 
+
 def process_jobs(cups_connection, cpp, printers):
     while True:
         try:
@@ -344,17 +353,20 @@ def process_jobs(cups_connection, cpp, printers):
                 for job in printer.get_jobs():
                     process_job(cups_connection, cpp, printer, job)
             wait_for_new_job(file(cpp.xmpp_auth_path).read())
-        except Exception, e:
+        except Exception:
             LOGGER.exception('ERROR: Could not Connect to Cloud Service. Will Try again in 60 Seconds')
             time.sleep(60)
 
+
 def wait_for_new_job(sasl_token):
     # https://developers.google.com/cloud-print/docs/rawxmpp
-    import ssl, socket
+    import ssl
+    import socket
     from xml.etree.ElementTree import iterparse, tostring
     xmpp = ssl.wrap_socket(socket.socket())
     xmpp.connect(('talk.google.com', 5223))
     parser = iterparse(xmpp, ('start', 'end'))
+
     def msg(msg=' '):
         xmpp.write(msg)
         stack = 0
@@ -373,6 +385,7 @@ def wait_for_new_job(sasl_token):
     msg('<iq type="set" to="%s"><subscribe xmlns="google:push"><item channel="cloudprint.google.com" from="cloudprint.google.com"/></subscribe></iq>' % bare_jid)
     return msg()
 
+
 def usage():
     print sys.argv[0] + ' [-d][-l][-h] [-p pid_file] [-a account_file]'
     print '-d\t\t: enable daemon mode (requires the daemon module)'
@@ -382,6 +395,7 @@ def usage():
     print '\t\t account_file format:\t <Google username>'
     print '\t\t\t\t\t <Google password>'
     print '-h\t\t: display this help'
+
 
 def main():
     opts, args = getopt.getopt(sys.argv[1:], 'dlhp:a:')
@@ -400,7 +414,7 @@ def main():
         elif o == '-a':
             authfile = a
             saslauthfile = authfile+'.sasl'
-        elif o =='-h':
+        elif o == '-h':
             usage()
             sys.exit()
     if not pidfile:
@@ -413,7 +427,6 @@ def main():
     else:
         handler = logging.StreamHandler(sys.stdout)
     LOGGER.addHandler(handler)
-
 
     cups_connection = cups.Connection()
     cpp = CloudPrintProxy()
@@ -439,8 +452,8 @@ def main():
                 LOGGER.info('Unable to find account file')
                 return
         else:
-          cpp.username = raw_input('Google username: ')
-          cpp.password = getpass.getpass()
+            cpp.username = raw_input('Google username: ')
+            cpp.password = getpass.getpass()
 
     #try to login
     while True:
@@ -466,11 +479,11 @@ def main():
             print 'daemon module required for -d'
             print '\tyum install python-daemon, or apt-get install python-daemon, or pip install python-daemon'
             sys.exit(1)
-        
+
         app = App(cups_connection=cups_connection,
                   cpp=cpp, printers=printers,
                   pidfile_path=os.path.abspath(pidfile))
-        sys.argv=[sys.argv[0], 'start']
+        sys.argv = [sys.argv[0], 'start']
         daemon_runner = runner.DaemonRunner(app)
         daemon_runner.do_action()
     else:

@@ -6,6 +6,7 @@ import UserDict
 import UserList
 import UserString
 
+
 class REST:
     class RESTException(Exception):
         def __init__(self, name, code, msg):
@@ -20,23 +21,23 @@ class REST:
             return '%s:%s\nMessage: %s' % (self.name, self.code, self.msg)
 
     CONTENT_ENCODE = {
-        'text/json' : lambda x: json.dumps(x, encoding='UTF-8'),
-        'application/json' : lambda x: json.dumps(x, encoding='UTF-8'),
-        'application/x-www-form-urlencoded' : urllib.urlencode,
+        'text/json': lambda x: json.dumps(x, encoding='UTF-8'),
+        'application/json': lambda x: json.dumps(x, encoding='UTF-8'),
+        'application/x-www-form-urlencoded': urllib.urlencode,
     }
 
     CONTENT_DECODE = {
-        'text/json' : json.loads,
-        'application/json' : json.loads,
-        'application/x-www-form-urlencoded' : lambda x : dict( (k, v[0] ) for k, v in [urlparse.parse_qs(x).items()]),
-        'text/plain' : lambda x : dict( l.split('=') for l in x.strip().split('\n') ),
+        'text/json': json.loads,
+        'application/json': json.loads,
+        'application/x-www-form-urlencoded': lambda x: dict((k, v[0]) for k, v in [urlparse.parse_qs(x).items()]),
+        'text/plain': lambda x: dict(l.split('=') for l in x.strip().split('\n')),
     }
 
     RESULT_WRAPTERS = {
-        type({}) : UserDict.UserDict,
-        type([]) : UserList.UserList,
-        type('') : UserString.UserString,
-        type(u'') : UserString.UserString,
+        type({}): UserDict.UserDict,
+        type([]): UserList.UserList,
+        type(''): UserString.UserString,
+        type(u''): UserString.UserString,
     }
 
     def __init__(self, host, auth=None, debug=False):
@@ -106,5 +107,3 @@ class REST:
 
     def delete(self, path, data, content_type='text/json', headers={}, response_type=None):
         return self.rest_call('DELETE', path, data, content_type, headers, response_type)
-
-
