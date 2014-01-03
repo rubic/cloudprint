@@ -351,11 +351,13 @@ def wait_for_new_job(auth):
     xmpp.connect(('talk.google.com', 5223))
     parser = iterparse(xmpp, ('start', 'end'))
 
-    print auth.xmpp_jid, auth.access_token, repr('\0{}\0{}'.format(auth.xmpp_jid, auth.access_token))
-    auth_string = base64.b64encode('\0{}\0{}'.format(auth.xmpp_jid, auth.access_token))
+    username = auth.xmpp_jid
+    username = 'armooo@armooo.net'
+    auth_string = base64.b64encode('\0{}\0{}'.format(username, auth.access_token))
+    print auth
 
     def msg(msg=' '):
-        print msg
+        print '>>>', msg
         xmpp.write(msg.encode('utf-8'))
         stack = 0
         for event, el in parser:
@@ -363,13 +365,14 @@ def wait_for_new_job(auth):
                 continue
             stack += 1 if event == 'start' else -1
             if stack == 0:
-                print tostring(el)
+                print '<<<', tostring(el)
                 assert not el.tag.endswith('failure') and not el.tag.endswith('error') and not el.get('type') == 'error', tostring(el)
                 return el
 
-    msg('<stream to="gmail.com" version="1.0" xmlns="http://etherx.jabber.org/streams">')
+    msg('<stream:stream to="gmail.com" xml:lang="en" version="1.0" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client">')
     msg('<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="X-OAUTH2" auth:service="chromiumsync" auth:allow-generated-jid="true" auth:client-uses-full-bind-result="true" xmlns:auth="http://www.google.com/talk/protocol/auth">%s</auth>' % auth_string)
-    msg('<s:stream to="gmail.com" version="1.0" xmlns:s="http://etherx.jabber.org/streams" xmlns="jabber:client">')
+    #msg('<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="X-OAUTH2">%s</auth>' % auth_string)
+    msg('<stream:stream to="gmail.com" xml:lang="en" version="1.0" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client">')
     iq = msg('<iq type="set"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><resource>Armooo</resource></bind></iq>')
     bare_jid = iq[0][0].text.split('/')[0]
     msg('<iq type="set" to="%s"><subscribe xmlns="google:push"><item channel="cloudprint.google.com" from="cloudprint.google.com"/></subscribe></iq>' % bare_jid)
