@@ -1,4 +1,5 @@
 # Copyright 2014 Jason Michalski <armooo@armooo.net>
+# Copyright 2014 Jeff Bauer <jbauer@rubic.com>
 #
 # This file is part of cloudprint.
 #
@@ -25,8 +26,9 @@ from xml.etree.ElementTree import XMLParser, TreeBuilder
 
 LOGGER = logging.getLogger('cloudprint.xmpp')
 
+
 class XmppXmlHandler(object):
-    STREAM_TAG='{http://etherx.jabber.org/streams}stream'
+    STREAM_TAG = '{http://etherx.jabber.org/streams}stream'
 
     def __init__(self):
         self._stack = 0
@@ -39,14 +41,12 @@ class XmppXmlHandler(object):
     def start(self, tag, attrib):
         if tag == self.STREAM_TAG:
             return
-
         self._builder.start(tag, attrib)
         self._stack += 1
 
     def end(self, tag):
         self._stack -= 1
         elem = self._builder.end(tag)
-
         if self._stack == 0:
             self._results.append(elem)
 
@@ -55,14 +55,12 @@ class XmppXmlHandler(object):
         get_elem, return it; else return None."""
         try:
             elem = self._results.popleft()
-
             if elem.tag.endswith('failure') or elem.tag.endswith('error'):
                 raise Exception("XMPP Error received - %s" % elem.tag)
-
             return elem
-
         except IndexError:
             return None
+
 
 class XmppConnection(object):
     def __init__(self, keepalive_period=60.0):
@@ -105,13 +103,10 @@ class XmppConnection(object):
 
         while True:
             elem = self._handler.get_elem()
-
             if elem is not None:
                 return elem
-
             # need more data; block until it becomes available
             self._read_socket()
-
 
     def _check_for_notification(self):
         """Check for any notifications which have already been received"""
@@ -121,17 +116,14 @@ class XmppConnection(object):
         LOGGER.info("Sending XMPP keepalive")
         self._write_socket(" ")
 
-
     def connect(self, host, port, use_ssl, sasl_token):
         """Establish a new connection to the XMPP server"""
         # first close any existing socket
         self.close()
-
         LOGGER.info("Establishing connection to xmpp server %s:%i" %
                     (host, port))
         self._xmppsock = socket.socket()
         self._wrappedsock = self._xmppsock
-
         try:
             if use_ssl:
                 self._wrappedsock = ssl.wrap_socket(self._xmppsock)
@@ -141,13 +133,32 @@ class XmppConnection(object):
             self._xmlparser = XMLParser(target=self._handler)
 
             # https://developers.google.com/cloud-print/docs/rawxmpp
-            self._msg('<stream:stream to="gmail.com" xml:lang="en" version="1.0" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client">')
-            self._msg('<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" mechanism="X-GOOGLE-TOKEN" auth:allow-generated-jid="true" auth:client-uses-full-bind-result="true" xmlns:auth="http://www.google.com/talk/protocol/auth">%s</auth>' % sasl_token)
-            self._msg('<stream:stream to="gmail.com" xml:lang="en" version="1.0" xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client">')
-            iq = self._msg('<iq type="set" id="0"><bind xmlns="urn:ietf:params:xml:ns:xmpp-bind"><resource>Armooo</resource></bind></iq>')
+            self._msg(
+                '<stream:stream to="gmail.com" xml:lang="en" version="1.0" '
+                'xmlns:stream="http://etherx.jabber.org/streams" '
+                'xmlns="jabber:client">')
+            self._msg(
+                '<auth xmlns="urn:ietf:params:xml:ns:xmpp-sasl" '
+                'mechanism="X-GOOGLE-TOKEN" auth:allow-generated-jid="true" '
+                'auth:client-uses-full-bind-result="true" '
+                'xmlns:auth="http://www.google.com/talk/protocol/auth">%s</auth>'
+                % sasl_token)
+            self._msg(
+                '<stream:stream to="gmail.com" xml:lang="en" version="1.0" '
+                'xmlns:stream="http://etherx.jabber.org/streams" '
+                'xmlns="jabber:client">')
+            iq = self._msg(
+                '<iq type="set" id="0">'
+                '<bind xmlns="urn:ietf:params:xml:ns:xmpp-bind">'
+                '<resource>Armooo</resource></bind></iq>')
             bare_jid = iq[0][0].text.split('/')[0]
-            self._msg('<iq type="set" id="2"><session xmlns="urn:ietf:params:xml:ns:xmpp-session"/></iq>')
-            self._msg('<iq type="set" id="3" to="%s"><subscribe xmlns="google:push"><item channel="cloudprint.google.com" from="cloudprint.google.com"/></subscribe></iq>' % bare_jid)
+            self._msg(
+                '<iq type="set" id="2">'
+                '<session xmlns="urn:ietf:params:xml:ns:xmpp-session"/></iq>')
+            self._msg(
+                '<iq type="set" id="3" to="%s"><subscribe xmlns="google:push">'
+                '<item channel="cloudprint.google.com" '
+                'from="cloudprint.google.com"/></subscribe></iq>' % bare_jid)
         except:
             self.close()
             raise
@@ -169,58 +180,43 @@ class XmppConnection(object):
             self._nextkeepalive = 0
             self._wrappedsock = None
 
-
     def is_connected(self):
         """Check if we are connected to the XMPP server
         returns true if the connection is active; false otherwise"""
         return self._connected
 
-
     def await_notification(self, timeout):
         """wait for a timeout or event notification"""
         now = time.time()
-
         timeoutend = None
         if timeout is not None:
             timeoutend = now + timeout
-
         while True:
             try:
                 if self._check_for_notification():
                     return True
-
                 if timeoutend is not None and timeoutend - now <= 0:
                     # timeout
                     return False
-
                 waittime = self._nextkeepalive - now
                 LOGGER.debug("%f seconds until next keepalive" % waittime)
-
                 if timeoutend is not None:
                     remaining = timeoutend - now
                     if remaining < waittime:
                         waittime = remaining
                         LOGGER.debug("%f seconds until timeout" % waittime)
-
                 if waittime < 0:
                     waittime = 0
-
                 sock = self._xmppsock
                 (r, w, e) = select.select([sock], [], [sock], waittime)
-
                 now = time.time()
-
                 if self._nextkeepalive - now <= 0:
                     self._send_keepalive()
-
                 if sock in r:
                     self._read_socket()
-
                 if sock in e:
                     LOGGER.warn("Error in xmpp connection")
                     raise Exception("xmpp connection errror")
-
             except:
                 self.close()
                 raise
-

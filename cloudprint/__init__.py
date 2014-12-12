@@ -1,5 +1,6 @@
 # Copyright 2014 Jason Michalski <armooo@armooo.net>
-#
+# Copyright 2014 Jeff Bauer <jbauer@rubic.com>
+
 # This file is part of cloudprint.
 #
 # cloudprint is free software: you can redistribute it and/or modify
