@@ -18,7 +18,6 @@
 # along with cloudprint.  If not, see <http://www.gnu.org/licenses/>.
 
 import rest
-import platform
 import cups
 import hashlib
 import time
@@ -37,11 +36,15 @@ import logging.handlers
 
 import xmpp
 
+
 XMPP_SERVER_HOST = 'talk.google.com'
 XMPP_USE_SSL = True
 XMPP_SERVER_PORT = 5223
 
-SOURCE = 'Armooo-PrintProxy-1'
+XHTTPHeader = 'TechotaLLC'
+SOURCE = 'Techota-PrintProxy-1'
+PRINTPROXY = 'Techota-PrintProxy'
+
 PRINT_CLOUD_SERVICE_ID = 'cloudprint'
 CLIENT_LOGIN_URL = '/accounts/ClientLogin'
 PRINT_CLOUD_URL = '/cloudprint/'
@@ -68,7 +71,7 @@ class CloudPrintProxy(object):
         self.verbose = verbose
         self.auth = None
         self.cups = cups.Connection()
-        self.proxy = platform.node() + '-Armooo-PrintProxy'
+        self.proxy = PRINTPROXY
         self.auth_path = os.path.expanduser('~/.cloudprintauth')
         self.xmpp_auth_path = os.path.expanduser('~/.cloudprintauth.sasl')
         self.username = None
@@ -187,7 +190,7 @@ class CloudPrintProxy(object):
                 'proxy': self.proxy,
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
         return [PrinterProxy(self, p['id'], p['name'])
                 for p in printers['printers']]
@@ -201,7 +204,7 @@ class CloudPrintProxy(object):
                 'printerid': printer_id,
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
         if self.verbose:
             LOGGER.info('Deleted printer ' + printer_id)
@@ -221,7 +224,7 @@ class CloudPrintProxy(object):
                 'capsHash': hashlib.sha1(ppd.encode('utf-8')).hexdigest(),
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
         if self.verbose:
             LOGGER.info('Added Printer ' + name)
@@ -242,7 +245,7 @@ class CloudPrintProxy(object):
                 'capsHash': hashlib.sha1(ppd.encode('utf-8')).hexdigest(),
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
         if self.verbose:
             LOGGER.info('Updated Printer ' + name)
@@ -256,7 +259,7 @@ class CloudPrintProxy(object):
                 'printerid': printer_id,
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
         if 'jobs' not in docs:
             return []
@@ -273,7 +276,7 @@ class CloudPrintProxy(object):
                 'status': 'DONE',
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
 
     def fail_job(self, job_id):
@@ -286,7 +289,7 @@ class CloudPrintProxy(object):
                 'status': 'ERROR',
             },
             'application/x-www-form-urlencoded',
-            {'X-CloudPrint-Proxy': 'ArmoooIsAnOEM'},
+            {'X-CloudPrint-Proxy': XHTTPHeader},
         )
 
 
@@ -389,7 +392,7 @@ def sync_printers(cups_connection, cpp):
 
 def process_job(cups_connection, cpp, printer, job):
     request = urllib2.Request(job['fileUrl'], headers={
-        'X-CloudPrint-Proxy': 'ArmoooIsAnOEM',
+        'X-CloudPrint-Proxy': XHTTPHeader,
         'Authorization': 'GoogleLogin auth=%s' % cpp.get_auth()
     })
 
@@ -400,7 +403,7 @@ def process_job(cups_connection, cpp, printer, job):
         tmp.flush()
 
         request = urllib2.Request(job['ticketUrl'], headers={
-            'X-CloudPrint-Proxy': 'ArmoooIsAnOEM',
+            'X-CloudPrint-Proxy': XHTTPHeader,
             'Authorization': 'GoogleLogin auth=%s' % cpp.get_auth()
         })
         options = json.loads(urllib2.urlopen(request).read())
