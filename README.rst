@@ -1,6 +1,8 @@
 Share your CUPS printers with google's cloud print.
 Works with linux and OS X.
 
+(Forked version to support Techota policies)
+
 Requires
 ---------------------------------------------------
 python 2.6 or 2.7
