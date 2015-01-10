@@ -72,7 +72,7 @@ class CloudPrintProxy(object):
         self.verbose = verbose
         self.auth = None
         self.cups = cups.Connection()
-        self.proxy = PRINTPROXY
+        self.proxy = self.get_proxy()
         self.auth_path = os.path.expanduser('~/.cloudprintauth')
         self.xmpp_auth_path = os.path.expanduser('~/.cloudprintauth.sasl')
         self.username = None
