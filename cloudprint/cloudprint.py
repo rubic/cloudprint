@@ -31,6 +31,7 @@ import stat
 import sys
 import argparse
 import re
+import platform
 import logging
 import logging.handlers
 
@@ -156,6 +157,21 @@ class CloudPrintProxy(object):
             if self.storepw:
                 auth_file.write("\n%s\n%s\n" % (self.username, self.password))
             auth_file.close()
+
+    def get_proxy(self):
+        """On salt minions, the proxy is defined as the 'connector_id'
+        e.g. bibb, bessemer, nashville, vance.  If the salt minion
+        configuraton cannot be determined, use the platform.node
+        (hostname).
+        """
+        try:
+            import salt.client
+            opts = salt.config.minion_config('/etc/salt/minion')
+            connector_id = opts['grains'].get('connector_id')
+        except ImportError:
+            pass
+        connector_id = connector_id if connector_id else platform.node()
+        return "{}-{}".format(connector_id, PRINTPROXY)
 
     def get_rest(self):
         class check_new_auth(object):
